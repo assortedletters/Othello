@@ -1,0 +1,686 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.NoSuchElementException;
+import java.lang.IllegalArgumentException;
+/* Daniel Kessler
+ * This is a class that allows you to play to board game Othello
+ */
+public class Othello extends JFrame implements ActionListener{
+  /** main method to launch game
+    * @param args dimensions of game
+    * @exception IllegalArgumentException thrown if too many inputs or inputs too large
+    */
+    public static void main(String [] args) {
+      if (args.length > 2) 
+        throw new IllegalArgumentException("this is a 2-dimensional board");
+      if (args.length == 2) {
+        int width = 8;
+        int height = 8;
+        try {                                                                //If no number input it makes a standard game
+          width = Integer.parseInt(args[0]);
+          height = Integer.parseInt(args[1]);
+        } catch(NumberFormatException e) {
+          new Othello();
+        }
+        if (width > 30 || height > 30)
+          throw new IllegalArgumentException();
+        new Othello(width, height);
+      }
+      if (args.length == 1) {
+        int width = Integer.parseInt(args[0]);
+        if (width > 30)
+          throw new IllegalArgumentException();
+        new Othello(width);
+      }
+      if (args.length == 0)
+        new Othello();
+    }
+    
+  /** keeps track if a move occurred or not */
+  private boolean flipped;
+  
+  /** keeps track of which turn it is and thus which color will be turned. initializes to 0*/
+  private int turnCount = 0;
+  
+  /** board game is played on */
+  private JPanel board;      
+  
+  /** frame for displaying dialog */
+  private JFrame dialog = new JFrame();
+  
+  /** stores spaces to place pieces */
+  private JButton[][] spaces;
+  
+  /** stores the color of the player about to move */
+  private Color color;
+  
+  /**stores the color of player not about to move */
+  private Color opponentColor;
+  
+  /** width and height of board*/
+  private int width;
+  private int height;
+  
+  /** creates a standard 8x8 game
+    */
+  public Othello() {
+    color = Color.black;
+    opponentColor = Color.white;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(8, 8,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[8][8];
+    for (int j = 0; j < 8; j++)                //cycles through the rows
+      for (int i = 0; i < 8; i++){             //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i].setBackground(Color.black);
+            spaces[j][i-1].setBackground(Color.white);
+            spaces[j-1][i].setBackground(Color.white);
+            spaces[j-1][i-1].setBackground(Color.black);
+          }
+        }
+    }
+    for (int j = 0; j < 8; j++)      // cycles through rows
+      for (int i = 0; i < 8; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+    
+  }
+  
+  /** creates a standard game with an AI
+    * 
+    */
+  public Othello(String difficulty) {
+    width = 8; height = 8;
+    color = Color.black;
+    opponentColor = Color.white;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(width, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[width][width];
+    for (int j = 0; j < width; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i].setBackground(Color.black);
+            spaces[j][i-1].setBackground(Color.white);
+            spaces[j-1][i].setBackground(Color.white);
+            spaces[j-1][i-1].setBackground(Color.black);
+          }
+        }
+    }
+    for (int j = 0; j < width; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+    while(areLegalMoves()) {
+      if (turnCount%2 == 1) {
+        cpuTurn();
+      }
+    }
+  }
+  /** creates a square game of given dimension
+    * @param width dimension of square board
+    */
+  public Othello(int width) {
+    color = Color.black;
+    opponentColor = Color.white;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(width, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[width][width];
+    for (int j = 0; j < width; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i].setBackground(Color.black);
+            spaces[j][i-1].setBackground(Color.white);
+            spaces[j-1][i].setBackground(Color.white);
+            spaces[j-1][i-1].setBackground(Color.black);
+          }
+        }
+    }
+    for (int j = 0; j < width; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+  }
+  
+  /** creates a game of given dimensions
+    * @param width dimension of board 
+    * @param height dimension of board
+    */
+  public Othello(int width, int height) {
+    color = Color.black;
+    opponentColor = Color.white;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(height, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[height][width];
+    for (int j = 0; j < height; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);         
+        if (j == height / 2) {
+          if (i == width / 2) {
+            spaces[j][i].setBackground(Color.black);
+            spaces[j][i-1].setBackground(Color.white);
+            spaces[j-1][i].setBackground(Color.white);
+            spaces[j-1][i-1].setBackground(Color.black);
+          }
+        }
+    }
+    for (int j = 0; j < height; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+  }
+    
+    /** performs a legal move in the game of Othello
+      * @param e is the button that was clicked.
+      */
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      JButton spot = (JButton) e.getSource();
+      if (isLegalMove(spot)) {
+        spot.setBackground(color);
+        flipped = true;
+      }
+      if (flipped) {
+        if (willFlipRight(spot))
+          flipRight(spot);
+        if (willFlipUp(spot))
+          flipUp(spot);
+        if (willFlipDown(spot))
+          flipDown(spot);
+        if (willFlipLeft(spot))
+          flipLeft(spot);
+        if(willFlipNE(spot))
+          flipNE(spot);
+        if(willFlipSW(spot))
+          flipSW(spot);
+        if(willFlipNW(spot))
+          flipNW(spot);
+        if(willFlipSE(spot))
+          flipSE(spot);
+          Color temp = color;
+          color = opponentColor;
+          opponentColor = temp;
+          flipped = false;
+          turnCount++;
+      }
+      if (!areLegalMoves()) {
+        if (color == Color.black)
+          JOptionPane.showMessageDialog(dialog, "No legal moves for black. It is white's turn");
+        if (color == Color.white)
+          JOptionPane.showMessageDialog(dialog, "No legal moves for white. It is black's turn");
+        Color temp = color;
+        color = opponentColor;
+        opponentColor = temp;
+        if (!areLegalMoves())
+          gameOver();
+      }
+    }
+    
+    /**secondary action event for CPU opponent moves
+      * @param b is spot moved
+      */
+     public void actionPerformed(JButton b) {
+      JButton spot = b;
+      if (isLegalMove(spot)) {
+        spot.setBackground(color);
+        flipped = true;
+      }
+      if (flipped) {
+        if (willFlipRight(spot))
+          flipRight(spot);
+        if (willFlipUp(spot))
+          flipUp(spot);
+        if (willFlipDown(spot))
+          flipDown(spot);
+        if (willFlipLeft(spot))
+          flipLeft(spot);
+        if(willFlipNE(spot))
+          flipNE(spot);
+        if(willFlipSW(spot))
+          flipSW(spot);
+        if(willFlipNW(spot))
+          flipNW(spot);
+        if(willFlipSE(spot))
+          flipSE(spot);
+          Color temp = color;
+          color = opponentColor;
+          opponentColor = temp;
+          flipped = false;
+          turnCount++;
+      }
+      if (!areLegalMoves()) {
+        if (color == Color.black) {
+          JOptionPane.showMessageDialog(dialog, "No legal moves for black. It is white's turn");
+          turnCount++;
+        }
+        if (color == Color.white) {
+          JOptionPane.showMessageDialog(dialog, "No legal moves for white. It is black's turn");
+          turnCount++;
+        }
+        Color temp = color;
+        color = opponentColor;
+        opponentColor = temp;
+        if (!areLegalMoves())
+          gameOver();
+      }
+    }
+
+      
+    /** checks if there are legal moves available
+      * returns true if there is atleast one move for current color
+      */
+    public boolean areLegalMoves() {
+      for (int row = 0; row < spaces.length; row++) {                   //cycles through rows
+        for (int column = 0; column < spaces[0].length; column++) {     //cycles through columns
+          if (isLegalMove(spaces[row][column]))
+            return true;
+        }
+      }
+      return false;
+    }    
+     
+    /** does actions for end game
+      */
+    public void gameOver() {
+      int blackPoints = 0;                                               //counts black team's total points 
+      int whitePoints = 0;                                               //counts white team's total points      
+      for (int row = 0; row < spaces.length; row++) {                    //cycles through rows
+        for (int column = 0; column < spaces[0].length; column++) {      //cycles through columns
+          if (spaces[row][column].getBackground() == Color.white)
+            whitePoints++;
+          if (spaces[row][column].getBackground() == Color.black)
+            blackPoints++;
+        }
+      }
+      if (blackPoints == whitePoints)
+          JOptionPane.showMessageDialog(dialog, "A winner must be chosen. Flip. A. Coin.");
+      else if (blackPoints > whitePoints)
+          JOptionPane.showMessageDialog(dialog, "Black team wins!");
+      else
+          JOptionPane.showMessageDialog(dialog, "White team wins!");
+      board.setVisible(false);
+    }
+    
+    /** returns true if flipping the button is a legal move
+      * @param b the button to be flipped
+      * @return true/false if legal move
+      */
+    public boolean isLegalMove(JButton b) {
+      if (b.getBackground() == color || b.getBackground() == opponentColor)
+        return false;
+      if (willFlipRight(b))
+        return true;
+      if (willFlipLeft(b))
+        return true;
+      if (willFlipUp(b))
+        return true;
+      if (willFlipDown(b))
+        return true;
+      if (willFlipNE(b))
+        return true;
+      if (willFlipSE(b))
+        return true;
+      if (willFlipNW(b))
+        return true;
+      if (willFlipSW(b))
+        return true;
+      return false;
+    }
+       
+    
+     /** flips colors to the left of move
+       * @param b the move location
+       */
+    public void flipLeft(JButton b) {
+      int row = getRow(b);
+      int column = getColumn(b) - 1;
+      while(column > 0 && spaces[row][column].getBackground() == opponentColor) {                                       //flips left of row
+        spaces[row][column].setBackground(color);
+        column--;
+      }
+    }
+    
+      /** flips colors to the right of move
+       * @param b the move location
+       */
+    public void flipRight(JButton b) {
+      int row = getRow(b);
+      int column = getColumn(b) + 1;
+      while(column < spaces[0].length && spaces[row][column].getBackground() == opponentColor) {                        //flips right of row
+        spaces[row][column].setBackground(color);
+        column++;
+      }
+    }
+    
+      /** flips colors above move 
+       * @param b the move location
+       */
+    public void flipUp(JButton b) {
+      int row = getRow(b) - 1;
+      int column = getColumn(b);
+      while(row > 0 && spaces[row][column].getBackground() == opponentColor) {                                          //flips above row
+        spaces[row][column].setBackground(color);
+        row--;
+      }
+    }
+      
+       /** flips colors above move 
+       * @param b the move location
+       */
+    public void flipDown(JButton b) {
+      int row = getRow(b) + 1;
+      int column = getColumn(b);
+      while(row > 0 && spaces[row][column].getBackground() == opponentColor) {                                          //flips down row
+        spaces[row][column].setBackground(color);
+        row++;
+      }
+    }
+      
+      /** flips colors NE of move 
+       * @param b the move location
+       */
+    public void flipNE(JButton b) {
+      int row = getRow(b) - 1;
+      int column = getColumn(b) + 1;
+      while(row > 0 && column < spaces[0].length && spaces[row][column].getBackground() == opponentColor) {             //flips NE of row
+        spaces[row][column].setBackground(color);
+        row--;
+        column++;
+      }
+    }
+      
+      /** flips colors SE of move 
+       * @param b the move location
+       */
+    public void flipSE(JButton b) {
+      int row = getRow(b) + 1;
+      int column = getColumn(b) + 1;
+      while(row < spaces.length && column < spaces[0].length && spaces[row][column].getBackground() == opponentColor) { //flips SE of row
+        spaces[row][column].setBackground(color);
+        row++;
+        column++;
+      }
+    }
+      
+      /** flips colors SW of move 
+       * @param b the move location
+       */
+    public void flipSW(JButton b) {
+      int row = getRow(b) + 1;
+      int column = getColumn(b) - 1;
+      while(row < spaces.length && column > 0 && spaces[row][column].getBackground() == opponentColor) {               //flips SW of row
+        spaces[row][column].setBackground(color);
+        row++;
+        column--;
+      }
+    }
+      
+      /** flips colors NW of move 
+       * @param b the move location
+       */
+    public void flipNW(JButton b) {
+      int row = getRow(b) - 1;
+      int column = getColumn(b) - 1;
+      while(row > 0 && column > 0 && spaces[row][column].getBackground() == opponentColor) {                            //flips NW of row
+        spaces[row][column].setBackground(color);
+        row--;
+        column--;
+      }
+    }
+    
+    /** checks if the move will cause any horizontal flips to the left
+      * @param b the potential move
+      * @return true or false if it will cause a flip
+      */
+    public boolean willFlipLeft(JButton b) {
+     
+      if (getColumn(b) <= 1) 
+        return false;
+      if (spaces[getRow(b)][getColumn(b) - 1].getBackground() == opponentColor) {
+        for (int i = getColumn(b) - 1; i > -1; i--) {                        //checks left of spot
+          if (spaces[getRow(b)][i].getBackground() == color)
+            return true;
+          if (spaces[getRow(b)][i].getBackground() != opponentColor)
+            return false;
+        }
+      }
+      return false;
+    }
+    
+     /** checks if the move will cause any horizontal flips to the right
+      * @param b the potential move
+      * @return true or false if it will cause a flip
+      */
+    public boolean willFlipRight(JButton b) {
+      if (getColumn(b) >= spaces[0].length - 2)
+        return false;
+      if (spaces[getRow(b)][getColumn(b) + 1].getBackground() == opponentColor) {
+        for (int i = getColumn(b) + 1; i < spaces[0].length; i++) {          //checks right of spot
+          if (spaces[getRow(b)][i].getBackground() == color)
+            return true;
+          if (spaces[getRow(b)][i].getBackground() != opponentColor)
+            return false;
+        }
+      }
+      return false;
+    }
+    
+    /** checks if it will flip up
+      * @param b the potential move 
+      * @return a true/false if it will flip
+      */
+    public boolean willFlipUp(JButton b) { 
+     
+      if (getRow(b) <= 1)
+        return false;
+      if (spaces[getRow(b) - 1][getColumn(b)].getBackground() == opponentColor) {
+        for (int i = getRow(b) - 1; i > -1; i--) {                        //checks above spot
+          if (spaces[i][getColumn(b)].getBackground() == color)
+            return true;
+          if (spaces[i][getColumn(b)].getBackground() != opponentColor)
+            return false;
+        }
+      }
+      return false;
+    }
+    
+    /** checks if it will flip down
+      * @param b the potential move 
+      * @return a true/false if it will flip
+      */
+    public boolean willFlipDown(JButton b) {
+     
+      if (getRow(b) >= spaces.length - 2)
+        return false;
+      if (spaces[getRow(b) + 1][getColumn(b)].getBackground() == opponentColor) {
+        for (int i = getRow(b) + 1; i < spaces.length; i++) {          //checks below spot 
+          if (spaces[i][getColumn(b)].getBackground() == color)
+            return true;
+          if (spaces[i][getColumn(b)].getBackground() != opponentColor)
+            return false;
+        }
+      }
+      return false;
+    }
+    
+    /** checks if the move will cause a flip to the NE
+      * @param b the move in question
+      * @return a true/false value
+      */
+    public boolean willFlipNE(JButton b) {
+      if (getRow(b) <= 1 || getColumn(b) >= spaces[0].length - 2)
+        return false;
+      if (spaces[getRow(b) - 1][getColumn(b) + 1].getBackground() != opponentColor)
+        return false;
+      int row = getRow(b) - 1;
+      int column = getColumn(b) + 1;
+      while (row > -1 && column < spaces[0].length) {              // goes through rows and columns
+        if (spaces[row][column].getBackground() == color)
+          return true;
+        if (spaces[row][column].getBackground() != opponentColor)
+          return false;
+        row--;
+        column++;
+      }
+      return false;
+    }
+    
+    /** checks if the move will cause a flip to the NW
+      * @param b the move in question
+      * @return a true/false value
+      */
+    public boolean willFlipNW(JButton b) {
+      if (getRow(b) <= 1 || getColumn(b) <= 1)
+        return false;
+      if (spaces[getRow(b) - 1][getColumn(b) - 1].getBackground() != opponentColor)
+        return false;
+      int row = getRow(b) - 1;
+      int column = getColumn(b) - 1;
+      while (row > -1 && column > -1) {                                  // goes through rows and columns
+        if (spaces[row][column].getBackground() == color)
+          return true;
+        if (spaces[row][column].getBackground() != opponentColor)
+          return false;
+        row--;
+        column--;
+      }
+      return false;
+    }
+    
+    /** checks if the move will cause a flip to the SW
+      * @param b the move in question
+      * @return a true/false value
+      */
+    public boolean willFlipSW(JButton b) {
+      if (getRow(b) >= spaces.length - 2 || getColumn(b) <= 1)
+        return false;
+      if (spaces[getRow(b) + 1][getColumn(b) - 1].getBackground() != opponentColor)
+        return false;
+      int row = getRow(b) + 1;
+      int column = getColumn(b) - 1;
+      while (row < spaces.length && column > -1) {                        // goes through rows and columns
+        if (spaces[row][column].getBackground() == color)
+          return true;
+        if (spaces[row][column].getBackground() != opponentColor)
+          return false;
+        row++;
+        column--;
+      }
+      return false;
+    }
+    
+    /** checks if the move will cause a flip to the SE
+      * @param b the move in question
+      * @return a true/false value
+      */
+    public boolean willFlipSE(JButton b) {
+      if (getRow(b) >= spaces.length - 2 || getColumn(b) >= spaces[0].length - 2)
+        return false;
+      if (spaces[getRow(b) + 1][getColumn(b) + 1].getBackground() != opponentColor)
+        return false;
+      int row = getRow(b) + 1;
+      int column = getColumn(b) + 1;
+      while (row < spaces.length && column < spaces[0].length) {             // goes through rows and columns
+        if (spaces[row][column].getBackground() == color)
+          return true;
+        if (spaces[row][column].getBackground() != opponentColor)
+          return false;
+        row++;
+        column++;
+      }
+      return false;
+    }
+    
+    /** finds the button b on the board and returns the row
+      * @param b the button in question
+      * @return int value of index row
+      */
+    public int getRow(JButton b) {
+      for (int j = 0; j < spaces.length; j++) {
+        for (int i = 0; i < spaces[j].length; i++) {
+           if (b == spaces[j][i])
+             return j;
+        }
+      }
+      throw new NoSuchElementException("Button not on board");
+    }
+    
+    /** finds the button b on the board and returns the column
+      * @param b the button in question
+      * @return int value of index column
+      */
+    public int getColumn(JButton b) {
+      for (int j = 0; j < spaces.length; j++) {
+        for (int i = 0; i < spaces[j].length; i++) {
+           if (b == spaces[j][i])
+             return i;
+        }
+      }
+      throw new NoSuchElementException("Button not on board");
+    }
+           
+    /** getter method for spaces variable
+      * @return address storing the spaces on board
+      */
+    public JButton[][] getSpaces() {
+      return spaces;
+    }
+    
+    public void cpuTurn() {
+      int h = this.height; int w = this.width; int turn = turnCount%2; 
+      for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+          if ( turn == 1 && isLegalMove(spaces[i][j])) {
+            actionPerformed(spaces[i][j]);
+            turn++;
+            try {
+            java.util.concurrent.TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+              System.out.println("lol wait your turn");
+            }
+          }
+        }
+      }
+    
+    }  
+    
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

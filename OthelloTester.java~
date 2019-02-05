@@ -1,0 +1,8 @@
+/**Daniel Kessler 
+ * testing class for Othello methods
+  */
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class OthelloTester {
+}

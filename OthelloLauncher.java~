@@ -1,0 +1,63 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.NoSuchElementException;
+import java.lang.IllegalArgumentException;
+/* Daniel Kessler
+ * This is a class that allows you to play to board game Othello
+ */
+public class OthelloLauncher extends JFrame implements ActionListener{
+  
+  private JButton easy;
+  
+  private JButton hard;
+  
+  private JButton multiplayer;
+  
+  private JPanel options;
+  
+  public OthelloLauncher() {
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    this.setDefaultLookAndFeelDecorated(true);
+    setSize(400,500);
+    //button adding
+    options = new JPanel(new GridLayout(1,3,1,1));
+    Container c = this.getContentPane();
+    easy = new JButton("easy");
+    easy.addActionListener(this);
+    hard = new JButton("hard");
+    hard.addActionListener(this);
+    multiplayer = new JButton("2-player");
+    multiplayer.addActionListener(this);
+    options.add(easy);
+    options.add(hard);
+    options.add(multiplayer);
+    c.add(options);
+    setVisible(true);
+    
+  }
+  
+  public static void main(String[] args) {
+    new OthelloLauncher();
+    
+  }
+  @Override
+  public void actionPerformed(ActionEvent e) {
+    JButton b = (JButton) e.getSource();
+    if(b==this.easy) {
+      new Othello("easy");
+      this.dispose();
+    }
+    
+    if(b==this.hard) {
+      new Othello("hard");
+      this.dispose(); 
+    }
+    
+    if(b==this.multiplayer) {
+      new Othello();
+      //this.dispose();
+    }
+  }
+
+}

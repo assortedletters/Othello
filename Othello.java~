@@ -28,10 +28,12 @@ public class Othello extends JFrame implements ActionListener{
         new Othello(width, height);
       }
       if (args.length == 1) {
-        int width = Integer.parseInt(args[0]);
-        if (width > 30)
-          throw new IllegalArgumentException();
-        new Othello(width);
+        String difficulty = args[0];
+        difficulty.toUpperCase();
+        new Othello(difficulty);
+      }
+      else {
+        new Othello();
       }
       if (args.length == 0)
         new Othello();
@@ -58,9 +60,14 @@ public class Othello extends JFrame implements ActionListener{
   /**stores the color of player not about to move */
   private Color opponentColor;
   
+  /** width and height of board*/
+  private int width;
+  private int height;
+  
   /** creates a standard 8x8 game
     */
   public Othello() {
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     color = Color.black;
     opponentColor = Color.white;
     setSize(800,820);    
@@ -85,12 +92,50 @@ public class Othello extends JFrame implements ActionListener{
       for (int i = 0; i < 8; i++)    // cycles thre columns and adds a JButton
         board.add(spaces[j][i]);
     setVisible(true);
+    
   }
   
+  /** creates a standard game with an AI
+    * 
+    */
+  public Othello(String difficulty) {
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+     width = 8; height = 8;
+    color = Color.black;
+    opponentColor = Color.white;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(width, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[width][width];
+    for (int j = 0; j < width; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i].setBackground(Color.black);
+            spaces[j][i-1].setBackground(Color.white);
+            spaces[j-1][i].setBackground(Color.white);
+            spaces[j-1][i-1].setBackground(Color.black);
+          }
+        }
+    }
+    for (int j = 0; j < width; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+    while(areLegalMoves()) {
+      if (turnCount%2 == 1) {
+        cpuTurn();
+      }
+    }
+  }
   /** creates a square game of given dimension
     * @param width dimension of square board
     */
   public Othello(int width) {
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     color = Color.black;
     opponentColor = Color.white;
     setSize(800,820);    
@@ -186,6 +231,55 @@ public class Othello extends JFrame implements ActionListener{
           JOptionPane.showMessageDialog(dialog, "No legal moves for black. It is white's turn");
         if (color == Color.white)
           JOptionPane.showMessageDialog(dialog, "No legal moves for white. It is black's turn");
+        Color temp = color;
+        color = opponentColor;
+        opponentColor = temp;
+        if (!areLegalMoves())
+          gameOver();
+      }
+    }
+    
+    /**secondary action event for CPU opponent moves
+      * @param b is spot moved
+      */
+     public void actionPerformed(JButton b) {
+      JButton spot = b;
+      if (isLegalMove(spot)) {
+        spot.setBackground(color);
+        flipped = true;
+      }
+      if (flipped) {
+        if (willFlipRight(spot))
+          flipRight(spot);
+        if (willFlipUp(spot))
+          flipUp(spot);
+        if (willFlipDown(spot))
+          flipDown(spot);
+        if (willFlipLeft(spot))
+          flipLeft(spot);
+        if(willFlipNE(spot))
+          flipNE(spot);
+        if(willFlipSW(spot))
+          flipSW(spot);
+        if(willFlipNW(spot))
+          flipNW(spot);
+        if(willFlipSE(spot))
+          flipSE(spot);
+          Color temp = color;
+          color = opponentColor;
+          opponentColor = temp;
+          flipped = false;
+          turnCount++;
+      }
+      if (!areLegalMoves()) {
+        if (color == Color.black) {
+          JOptionPane.showMessageDialog(dialog, "No legal moves for black. It is white's turn");
+          turnCount++;
+        }
+        if (color == Color.white) {
+          JOptionPane.showMessageDialog(dialog, "No legal moves for white. It is black's turn");
+          turnCount++;
+        }
         Color temp = color;
         color = opponentColor;
         opponentColor = temp;
@@ -555,6 +649,23 @@ public class Othello extends JFrame implements ActionListener{
       return spaces;
     }
     
+    public void cpuTurn() {
+      int h = this.height; int w = this.width; int turn = turnCount%2; 
+      for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+          if ( turn == 1 && isLegalMove(spaces[i][j])) {
+            actionPerformed(spaces[i][j]);
+            turn++;
+            try {
+            java.util.concurrent.TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+              System.out.println("lol wait your turn");
+            }
+          }
+        }
+      }
+    
+    }  
     
   }
 

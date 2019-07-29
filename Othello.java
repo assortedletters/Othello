@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
 import java.util.NoSuchElementException;
 import java.lang.IllegalArgumentException;
 /* Daniel Kessler
@@ -28,13 +29,13 @@ public class Othello extends JFrame implements ActionListener{
         new Othello(width, height);
       }
       if (args.length == 1) {
-        int width = Integer.parseInt(args[0]);
-        if (width > 30)
-          throw new IllegalArgumentException();
-        new Othello(width);
+        String difficulty = args[0];
+        difficulty.toUpperCase();
+        new Othello(difficulty);
       }
-      if (args.length == 0)
+      else {
         new Othello();
+      }
     }
     
   /** keeps track if a move occurred or not */
@@ -55,6 +56,9 @@ public class Othello extends JFrame implements ActionListener{
   /** stores the color of the player about to move */
   private Color color;
   
+  /** whether we have cpu player or not */
+  private boolean cpu;
+  
   /**stores the color of player not about to move */
   private Color opponentColor;
   
@@ -62,9 +66,14 @@ public class Othello extends JFrame implements ActionListener{
   private int width;
   private int height;
   
+  /** list of possible moves */
+  
   /** creates a standard 8x8 game
     */
   public Othello() {
+    super("Othello");
+    cpu = false;
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     color = Color.black;
     opponentColor = Color.white;
     setSize(800,820);    
@@ -96,9 +105,12 @@ public class Othello extends JFrame implements ActionListener{
     * 
     */
   public Othello(String difficulty) {
+    super("Othello");
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    cpu = true;
     width = 8; height = 8;
-    color = Color.black;
-    opponentColor = Color.white;
+    color = Color.orange;
+    opponentColor = Color.green;
     setSize(800,820);    
     Container c = this.getContentPane();       // gets the content pane of the game
     board = new JPanel(new GridLayout(width, width,3,3)); 
@@ -110,10 +122,10 @@ public class Othello extends JFrame implements ActionListener{
         spaces[j][i].addActionListener(this);
         if (j == spaces.length / 2) {
           if (i == spaces[0].length / 2) {
-            spaces[j][i].setBackground(Color.black);
-            spaces[j][i-1].setBackground(Color.white);
-            spaces[j-1][i].setBackground(Color.white);
-            spaces[j-1][i-1].setBackground(Color.black);
+            spaces[j][i].setBackground(color);
+            spaces[j][i-1].setBackground(opponentColor);
+            spaces[j-1][i].setBackground(opponentColor);
+            spaces[j-1][i-1].setBackground(color);
           }
         }
     }
@@ -121,16 +133,83 @@ public class Othello extends JFrame implements ActionListener{
       for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
         board.add(spaces[j][i]);
     setVisible(true);
-    while(areLegalMoves()) {
-      if (turnCount%2 == 1) {
-        cpuTurn();
-      }
+  }
+  
+  /** Easter egg! */
+  public Othello(String difficulty, String key) {
+    super("Othello");
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    cpu = true;
+    width = 8; height = 8;
+    color = Color.orange;
+    opponentColor = Color.green;
+    Icon sheik = new ImageIcon("sheik.png");
+    Icon zelda = new ImageIcon("zelda.png");
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(width, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[width][width];
+    for (int j = 0; j < width; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i] = new JButton(sheik);
+            spaces[j][i-1] = new JButton(zelda);
+            spaces[j-1][i] = new JButton(zelda);
+            spaces[j-1][i-1] = new JButton(sheik);
+            spaces[j][i].setBackground(color);
+            spaces[j][i-1].setBackground(opponentColor);
+            
+            spaces[j-1][i].setBackground(opponentColor);
+            spaces[j-1][i-1].setBackground(color);
+          }
+        }
     }
+    for (int j = 0; j < width; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
+  }
+  /** cpu fighter with custom color */
+  
+  public Othello(String difficulty, Color color1, Color color2) {
+    super("Othello");
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    cpu = true;
+    width = 8; height = 8;
+    color = color1;
+    opponentColor = color2;
+    setSize(800,820);    
+    Container c = this.getContentPane();       // gets the content pane of the game
+    board = new JPanel(new GridLayout(width, width,3,3)); 
+    c.add(board,"Center");
+    spaces = new JButton[width][width];
+    for (int j = 0; j < width; j++)      //cycles through the rows
+      for (int i = 0; i < width; i++){    //cycles through the columns and adds JButtons
+        spaces[j][i] = new JButton();
+        spaces[j][i].addActionListener(this);
+        if (j == spaces.length / 2) {
+          if (i == spaces[0].length / 2) {
+            spaces[j][i].setBackground(color);
+            spaces[j][i-1].setBackground(opponentColor);
+            spaces[j-1][i].setBackground(opponentColor);
+            spaces[j-1][i-1].setBackground(color);
+          }
+        }
+    }
+    for (int j = 0; j < width; j++)      // cycles through rows
+      for (int i = 0; i < width; i++)    // cycles thre columns and adds a JButton
+        board.add(spaces[j][i]);
+    setVisible(true);
   }
   /** creates a square game of given dimension
     * @param width dimension of square board
     */
   public Othello(int width) {
+    this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     color = Color.black;
     opponentColor = Color.white;
     setSize(800,820);    
@@ -188,6 +267,7 @@ public class Othello extends JFrame implements ActionListener{
     setVisible(true);
   }
     
+  
     /** performs a legal move in the game of Othello
       * @param e is the button that was clicked.
       */
@@ -215,12 +295,32 @@ public class Othello extends JFrame implements ActionListener{
           flipNW(spot);
         if(willFlipSE(spot))
           flipSE(spot);
-          Color temp = color;
-          color = opponentColor;
-          opponentColor = temp;
-          flipped = false;
-          turnCount++;
-      }
+        
+        Color temp = color;
+        color = opponentColor;
+        opponentColor = temp;
+        flipped = false;
+        turnCount++;
+        if(cpu) {
+          SwingWorker sw = new SwingWorker() 
+          {
+            @Override
+            protected String doInBackground() throws Exception  
+            { 
+                // define what thread will do here 
+                cpuTurnHard();
+                  
+                String res = "move ready"; 
+                return res; 
+            }  
+        }; 
+          
+        // executes the swingworker on worker thread 
+        sw.execute();  
+          };
+     }
+        
+     {
       if (!areLegalMoves()) {
         if (color == Color.black)
           JOptionPane.showMessageDialog(dialog, "No legal moves for black. It is white's turn");
@@ -232,6 +332,7 @@ public class Othello extends JFrame implements ActionListener{
         if (!areLegalMoves())
           gameOver();
       }
+    }
     }
     
     /**secondary action event for CPU opponent moves
@@ -283,7 +384,41 @@ public class Othello extends JFrame implements ActionListener{
       }
     }
 
-      
+     public JButton[][] doAction(JButton b, JButton[][] board) {
+      JButton spot = b;
+      JButton[][] tempB = getSpaces();
+      spaces = board;
+      if (isLegalMove(spot)) {
+        spot.setBackground(color);
+        flipped = true;
+      }
+      if (flipped) {
+        if (willFlipRight(spot))
+          flipRight(spot);
+        if (willFlipUp(spot))
+          flipUp(spot);
+        if (willFlipDown(spot))
+          flipDown(spot);
+        if (willFlipLeft(spot))
+          flipLeft(spot);
+        if(willFlipNE(spot))
+          flipNE(spot);
+        if(willFlipSW(spot))
+          flipSW(spot);
+        if(willFlipNW(spot))
+          flipNW(spot);
+        if(willFlipSE(spot))
+          flipSE(spot);
+        
+        flipped = false;
+      }
+
+ 
+        spaces = tempB;
+        return board;
+    }
+     
+     
     /** checks if there are legal moves available
       * returns true if there is atleast one move for current color
       */
@@ -304,9 +439,9 @@ public class Othello extends JFrame implements ActionListener{
       int whitePoints = 0;                                               //counts white team's total points      
       for (int row = 0; row < spaces.length; row++) {                    //cycles through rows
         for (int column = 0; column < spaces[0].length; column++) {      //cycles through columns
-          if (spaces[row][column].getBackground() == Color.white)
+          if (spaces[row][column].getBackground() == opponentColor)
             whitePoints++;
-          if (spaces[row][column].getBackground() == Color.black)
+          if (spaces[row][column].getBackground() == color)
             blackPoints++;
         }
       }
@@ -644,6 +779,20 @@ public class Othello extends JFrame implements ActionListener{
       return spaces;
     }
     
+    public void cpuTurnHard() {
+      LinkedList<JButton> moves = findLegalMoves();
+      JButton best = moves.peekFirst();
+      int bestScore = scoreOppMove(best);
+      for(JButton b : moves) {
+        int temp = scoreOppMove(b);
+        if(temp > bestScore) {
+          bestScore = temp;
+          best = b;
+        }
+      }
+      actionPerformed(best);      
+    }
+    
     public void cpuTurn() {
       int h = this.height; int w = this.width; int turn = turnCount%2; 
       for (int i = 0; i < h; i++) {
@@ -659,8 +808,81 @@ public class Othello extends JFrame implements ActionListener{
           }
         }
       }
+    }
+    /**for second iteration of move finding */
     
-    }  
+    public LinkedList<JButton> findLegalMoves(JButton[][] board) {
+      int h = this.height; int w = this.width; int turn = turnCount%2; 
+      JButton[][] temp = spaces;
+      spaces = board;
+      LinkedList<JButton> moves = new LinkedList<JButton>();
+      for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+          if ( turn == 1 && isLegalMove(spaces[i][j])) {
+            try {
+              moves.add(spaces[i][j]);
+            java.util.concurrent.TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+              System.out.println("lol wait your turn");
+            }
+          }
+        }
+      }
+      spaces = temp;
+      return moves;
+    }
+    
+    public LinkedList<JButton> findLegalMoves() {
+      int h = this.height; int w = this.width; int turn = turnCount%2; 
+      LinkedList<JButton> cpuMoves = new LinkedList<JButton>();
+      for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+          if ( turn == 1 && isLegalMove(spaces[i][j])) {
+            try {
+              cpuMoves.add(spaces[i][j]);
+            java.util.concurrent.TimeUnit.SECONDS.sleep(2);
+            } catch(InterruptedException e) {
+              System.out.println("lol wait your turn");
+            }
+          }
+        }
+      }
+      return cpuMoves;
+    }
+    
+    public int scoreOppMove(JButton b) {
+
+        JButton[][] tempSpaces = new JButton[8][8];
+        for (int row = 0; row < spaces.length; row++) {                    //cycles through rows
+          for (int column = 0; column < spaces[0].length; column++) {
+            tempSpaces[row][column] = new JButton();
+            tempSpaces[row][column].setBackground(spaces[row][column].getBackground());
+          }
+        }
+        tempSpaces = doAction(tempSpaces[getRow(b)][getColumn(b)],tempSpaces);
+        int playerPoints = 0;                                               //counts black team's total points 
+        int oppPoints = 0;                                               //counts white team's total points      
+        for (int row = 0; row < spaces.length; row++) {                    //cycles through rows
+          for (int column = 0; column < spaces[0].length; column++) {      //cycles through columns
+            if (spaces[row][column].getBackground() == color) {
+              System.out.println(spaces[row][column].getBackground());
+              oppPoints--; 
+            }
+            if (tempSpaces[row][column].getBackground() == color) {
+              oppPoints++;
+            }
+          }
+        }
+        return oppPoints;
+      }
+
+    
+    
+    Runnable doCpuTurn = new Runnable() {
+      public void run() {
+        cpuTurnHard();
+      }
+    };
     
   }
 
